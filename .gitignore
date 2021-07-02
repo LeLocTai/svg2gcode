@@ -1,5 +1,6 @@
 /target
 **/*.rs.bk
-./*.gcode
+/*.gcode
+/*.svg
 pkg/
 dist

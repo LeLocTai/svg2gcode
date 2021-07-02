@@ -28,6 +28,12 @@ struct Opt {
     /// Used for scaling visual units (pixels, points, picas, etc.)
     #[structopt(long, default_value = "96")]
     dpi: f64,
+    /// Width with optional unit. Specify either width or height will retain aspect ratio. Specify both will stretch the result.
+    #[structopt(short, long)]
+    width: Option<String>,
+    /// Height with optional unit. Specify either width or height will retain aspect ratio. Specify both will stretch the result.
+    #[structopt(short, long)]
+    height: Option<String>,
     #[structopt(alias = "tool_on_sequence", long = "on")]
     /// G-Code for turning on the tool
     tool_on_sequence: Option<String>,
@@ -83,6 +89,8 @@ fn main() -> io::Result<()> {
         tolerance: opt.tolerance,
         feedrate: opt.feedrate,
         dpi: opt.dpi,
+        width: opt.width,
+        height: opt.height,
     };
 
     let snippets = [
