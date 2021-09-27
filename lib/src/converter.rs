@@ -17,25 +17,25 @@ use crate::turtle::*;
 
 /// High-level output options
 #[derive(Debug)]
-pub struct ConversionOptions {
+pub struct ConversionOptions<'a> {
     /// Curve interpolation tolerance in millimeters
     pub tolerance: f64,
     /// Feedrate in millimeters / minute
     pub feedrate: f64,
     /// Dots per inch for pixels, picas, points, etc.
     pub dpi: f64,
-    pub width: Option<String>,
-    pub height: Option<String>,
+    pub width: &'a Option<String>,
+    pub height: &'a Option<String>,
 }
 
-impl Default for ConversionOptions {
+impl Default for ConversionOptions<'_> {
     fn default() -> Self {
         Self {
             tolerance: 0.002,
             feedrate: 300.0,
             dpi: 96.0,
-            width: None,
-            height: None,
+            width: &None,
+            height: &None,
         }
     }
 }

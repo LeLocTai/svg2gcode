@@ -1,3 +1,4 @@
+use codespan_reporting::term::termcolor::NoColor;
 use g_code::{
     emit::{format_gcode_io, FormatOptions},
     parse::snippet_parser,
@@ -70,7 +71,7 @@ fn main() -> io::Result<()> {
     let opt = Opt::from_args();
 
     let input = match opt.file {
-        Some(filename) => {
+        Some(ref filename) => {
             let mut f = File::open(filename)?;
             let len = f.metadata()?.len();
             let mut input = String::with_capacity(len as usize + 1);
@@ -89,8 +90,8 @@ fn main() -> io::Result<()> {
         tolerance: opt.tolerance,
         feedrate: opt.feedrate,
         dpi: opt.dpi,
-        width: opt.width,
-        height: opt.height,
+        width: &opt.width,
+        height: &opt.height,
     };
 
     let snippets = [
@@ -102,14 +103,16 @@ fn main() -> io::Result<()> {
             .as_deref()
             .map(snippet_parser)
             .transpose(),
-        opt.begin_sequence
-            .as_deref()
-            .map(snippet_parser)
-            .transpose(),
-        opt.end_sequence.as_deref().map(snippet_parser).transpose(),
+        // opt.begin_sequence
+        //     .as_deref()
+        //     .map(snippet_parser)
+        //     .transpose(),
+        // opt.end_sequence.as_deref().map(snippet_parser).transpose(),
     ];
 
-    let machine = if let [Ok(tool_on_action), Ok(tool_off_action), Ok(program_begin_sequence), Ok(program_end_sequence)] =
+    let machine = if let [Ok(tool_on_action), Ok(tool_off_action)
+    // , Ok(program_begin_sequence), Ok(program_end_sequence)
+    ] =
         snippets
     {
         Machine::new(
@@ -118,8 +121,8 @@ fn main() -> io::Result<()> {
             },
             tool_on_action,
             tool_off_action,
-            program_begin_sequence,
-            program_end_sequence,
+            None,
+            None,
         )
     } else {
         use codespan_reporting::term::{
@@ -175,9 +178,30 @@ fn main() -> io::Result<()> {
     }
     set_origin(&mut program, origin);
 
-    if let Some(out_path) = opt.out {
-        format_gcode_io(&program, FormatOptions::default(), File::create(out_path)?)
+    if let Some(ref out_path) = opt.out {
+        write_output(&program, &opt, File::create(out_path)?)
     } else {
-        format_gcode_io(&program, FormatOptions::default(), std::io::stdout())
+        write_output(&program, &opt, std::io::stdout())
     }
+}
+
+fn write_output<W: std::io::Write>(
+    program: &[g_code::emit::Token<'_>],
+    opt: &Opt,
+    mut w: W,
+) -> io::Result<()> {
+    if let Some(begin_sequence) = opt.begin_sequence.as_deref() {
+        writeln!(w, "{}", begin_sequence)?;
+    }
+
+    format_gcode_io(&program, FormatOptions::default(), w.by_ref())?;
+
+    if let Some(end_sequence) = opt.end_sequence.as_deref() {
+        writeln!(w, "{}", end_sequence)?;
+    }
+
+    // Ensure presence of trailing newline
+    writeln!(w)?;
+
+    Ok(())
 }
